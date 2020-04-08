@@ -1,8 +1,9 @@
 pragma solidity ^0.5.15;
 
+import "../coffeeaccesscontrol/AllRoles.sol";
 
-// Define a contract 'Supplychain'
-contract SupplyChain {
+
+contract SupplyChain is AllRoles {
     address payable owner;
 
     uint256 upc;
@@ -10,8 +11,6 @@ contract SupplyChain {
     uint256 sku;
 
     mapping(uint256 => Item) items;
-
-    mapping(uint256 => string[]) itemsHistory;
 
     enum State {
         Harvested, // 0
@@ -104,8 +103,7 @@ contract SupplyChain {
         string memory _originFarmLatitude,
         string memory _originFarmLongitude,
         string memory _productNotes
-    ) public {
-        // Add the new item as part of Harvest
+    ) public isFarmer() {
         Item memory _item = Item({
             sku: sku,
             upc: _upc,
@@ -125,9 +123,7 @@ contract SupplyChain {
         });
 
         items[_upc] = _item;
-        // Increment sku
         sku = sku + 1;
-        // Emit the appropriate event
 
         emit Harvested(_upc);
     }
@@ -172,6 +168,7 @@ contract SupplyChain {
         isState(State.ForSale, _upc)
         paidEnough(items[_upc].productPrice)
         checkValue(_upc)
+        isDistributor()
     {
         Item storage _item = items[_upc];
         address payable farmer = address(uint160(_item.ownerID));
@@ -195,28 +192,32 @@ contract SupplyChain {
         emit Shipped(_upc);
     }
 
-    // Define a function 'receiveItem' that allows the retailer to mark an item 'Received'
-    // Use the above modifiers to check if the item is shipped
     function receiveItem(uint256 _upc)
         public
-    // Call modifier to check if upc has passed previous supply chain stage
-
-    // Access Control List enforced by calling Smart Contract / DApp
+        isState(State.Shipped, _upc)
+        isRetailer()
     {
-        // Update the appropriate fields - ownerID, retailerID, itemState
-        // Emit the appropriate event
+        Item storage _item = items[_upc];
+
+        _item.ownerID = msg.sender;
+        _item.retailerID = msg.sender;
+        _item.itemState = State.Received;
+
+        emit Received(_upc);
     }
 
-    // Define a function 'purchaseItem' that allows the consumer to mark an item 'Purchased'
-    // Use the above modifiers to check if the item is received
     function purchaseItem(uint256 _upc)
         public
-    // Call modifier to check if upc has passed previous supply chain stage
-
-    // Access Control List enforced by calling Smart Contract / DApp
+        isState(State.Received, _upc)
+        isConsumer()
     {
-        // Update the appropriate fields - ownerID, consumerID, itemState
-        // Emit the appropriate event
+        Item storage _item = items[_upc];
+
+        _item.ownerID = msg.sender;
+        _item.consumerID = msg.sender;
+        _item.itemState = State.Purchased;
+
+        emit Purchased(_upc);
     }
 
     function fetchItemBufferOne(uint256 _upc)
