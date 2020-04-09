@@ -21,3 +21,8 @@ https://ropsten.etherscan.io/address/0x08d6b71ec53e8e5e96e1d37dd0dc130004586150
 ## IPFS
 
 I did not use IPFS.
+
+## Tools
+
+-   truffle version: v5.1.13
+-   node version: v12.13.0
